@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Cart</title>
+	<link  rel="stylesheet" href="style.css"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+	<div class="outer-container">
+		<div class="inner-container">
+			<div class="cart-heading">
+				<h3>All Items <span id="productNamePrompt"></span></h3>
+			</div>
+			<div class="proList">
+			<ul id="product"></ul>
+			</div>
+			<div class="rt-table">
+				<table class="table custom-table">
+					<thead>
+					<tr>
+					<th colspan="2">Item Name</th>
+					<th>Qty</th>
+					<th>Price</th>
+					</tr>
+					</thead>
+					<tbody id= "selItemsDisplay">
+					
+					</tbody>
+				</table>
+				<table class="table custom-table">
+					<tbody id= "totalDiscountTable">
+					
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+	<script>
+		var totalitems=[];
+		function GetProducts(){
+			var xhttp = new XMLHttpRequest();
+		xhttp.onreadystatechange = function() {
+	    if (this.readyState == 4 && this.status == 200) {
+			 var response = JSON.parse(xhttp.responseText);
+			 //console.log(response.items);
+			 var items = response.items;
+			 totalitems=  response.items;
+			 var output = '';
+			 
+	    	 for(var i = 0; i < items.length; i++) {
+				 output += '<li>' +
+					'<div class="each-item">' + 
+						'<div class="discount">' + '<p>' + items[i].discount + ' %' +'</p>' + '</div>' + 
+						'<img class="imgRes" src=' + items[i].image + '>' + 
+						'<div class="details">' + 
+							'<h3>' + items[i].name +'</h3>' +
+							'<span class="display">'+'<span>' + items[i].price.display + '</span>' + '</span>' + '  ' +
+							'<span class="actual">' + items[i].price.actual + '</span>' + 
+							'<span>' + '<button class="cart-btn" onclick="addToCart(\''+ items[i].name  +'\');" type="button" ' + '>'+ 'Add To Cart </button>' +					
+						'</div>' +
+					'</div>' + 
+					'</li>';
+			 }
+	    	 document.getElementById('product').innerHTML = output;
+	    	}
+	    };
+    	xhttp.open("GET", "CartValue.json", true);
+		xhttp.send();
+		}
+		GetProducts();
+		var cartItems=[];
+		function addToCart(name) {
+		for (var i=0; i < totalitems.length; i++) {		
+        if (totalitems[i].name == name) {
+			var tempItem=totalitems[i];
+			var searchedIndex=checkDuplicateItemFromCart(name);
+			if(searchedIndex>=0){
+			cartItems[searchedIndex].quantity+=1;
+			}else{
+				tempItem.quantity=1;
+				cartItems.push(tempItem);
+			}
+			document.getElementById('productNamePrompt').innerHTML = totalitems[i].name + ' is added to cart';
+			break;
+
+		}
+		
+	}
+	RenderCartTable();			
+		}
+		function removeFromCart(name) {
+			for (var i=0; i < cartItems.length; i++) {		
+        if (cartItems[i].name == name) {
+			var tempItem=cartItems[i];
+			if(tempItem.quantity==1){
+				cartItems.splice(i, 1);
+			}else{		
+			var quant=cartItems[i].quantity;
+			cartItems[i].quantity-=1;
+			}
+			document.getElementById('productNamePrompt').innerHTML = totalitems[i].name + ' is removed from the cart';
+			break;
+        }
+	}
+	RenderCartTable();
+		}
+		function RenderCartTable(){
+			var rowHtml='';
+			var amountTotal=0;
+			var amountTotalWithoutDiscount=0;
+			var itemCount=0;
+			for(var i = 0; i < cartItems.length; i++) {
+				amountTotal+=cartItems[i].price.actual*cartItems[i].quantity;
+				itemCount+=cartItems[i].quantity;
+				amountTotalWithoutDiscount+=cartItems[i].price.display*cartItems[i].quantity;
+				rowHtml += '<tr>' + 
+					'<td>'+'<img class="imgRes" width="60" height="60" src=' + cartItems[i].image + '>'+' </td>' +
+					'<td>'+cartItems[i].name+' </td>' +
+					'<td> ' + '</span><button type="button" class="qtybtn" onclick="removeFromCart(\''+cartItems[i].name+'\');"> - </button><span class="value-bg">' + cartItems[i].quantity+ '</span><button type="button" class="qtybtn" onclick="addToCart(\''+cartItems[i].name+'\');"> + </button><span>' + '</td>' + 
+					'<td>'+cartItems[i].price.actual*cartItems[i].quantity+' </td>' +
+				    '</tr>';
+			}
+			document.getElementById('selItemsDisplay').innerHTML = rowHtml;
+			var discountTbleHtml= '<tr>' +
+					'<td>Items('+itemCount+')</td>' + 
+					'<td>'+amountTotalWithoutDiscount+'</td>' +
+					'</tr>' +
+					'<tr>' +
+						'<td>Discount</td>' +
+						'<td>'+(amountTotalWithoutDiscount-amountTotal)+'</td>' +
+					'</tr>' +
+					'<tr>' +
+						'<td>Total</td>' +
+						'<td>' +amountTotal + '</td>' +
+					'</tr>';
+					document.getElementById('totalDiscountTable').innerHTML = discountTbleHtml;
+		}
+		function checkDuplicateItemFromCart(name){
+			for (var i=0; i < cartItems.length; i++) {		
+        if (cartItems[i].name == name) {
+			return i;
+        }
+		}
+		return -1;
+	}
+		
+	</script>
+	
+
+</body>
+
+</html>
